@@ -183,6 +183,8 @@ Matrix = renpy.display.matrix.Matrix
 
 Live2D = renpy.gl2.live2d.Live2D
 
+Effekseer = renpy.gl2.effekseer.Effect
+
 Model = renpy.display.model.Model
 GLTFModel = renpy.gl2.assimp.GLTFModel
 

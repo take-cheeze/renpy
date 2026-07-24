@@ -52,6 +52,21 @@ def main():
     if cubism:
         setuplib.include_dirs.append("{}/Core/include".format(cubism))
 
+    # Optional Effekseer particle-effect support. EFFEKSEER points at an
+    # Effekseer runtime root that has an include/ directory with the Effekseer
+    # headers and a lib/ directory with the static libraries (libEffekseer and
+    # libEffekseerRendererGL).
+    effekseer = os.environ.get("EFFEKSEER", None)
+    if effekseer:
+        setuplib.include_dirs.append("{}/include".format(effekseer))
+        # setuplib has no per-module link-args hook, so these are applied to
+        # every extension. That is harmless: the archives only contribute
+        # symbols to the one module (renpy.gl2.effekseermodel) that references
+        # them.
+        setuplib.extra_link_args.append("-L{}/lib".format(effekseer))
+        setuplib.extra_link_args.append("-lEffekseerRendererGL")
+        setuplib.extra_link_args.append("-lEffekseer")
+
     # src/ directory.
     cython("_renpy", ["src/IMG_savepng.c", "src/core.c"], packages="sdl3 libpng")
 
@@ -140,6 +155,9 @@ def main():
         cython("renpy.gl2.live2dmodel", ["src/live2dcsm.c"], packages="sdl3")
 
     cython("renpy.gl2.assimp", ["src/assimpio.cc"], language="c++", packages="assimp sdl3")
+
+    if effekseer:
+        cython("renpy.gl2.effekseermodel", ["src/effekseerio.cc"], language="c++", packages="sdl3")
 
     # renpy.text
     cython("renpy.text.textsupport")

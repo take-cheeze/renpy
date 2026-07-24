@@ -20,6 +20,8 @@ if typing.TYPE_CHECKING:
     from . import gl2shadercache as gl2shadercache
     from . import gl2texture as gl2texture
     from . import gl2uniform as gl2uniform
+    from . import effekseer as effekseer
+    from . import effekseermodel as effekseermodel
     from . import live2d as live2d
     from . import live2dmodel as live2dmodel
     from . import live2dmotion as live2dmotion
