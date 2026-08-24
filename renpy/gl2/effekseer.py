@@ -32,6 +32,7 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
 import math
+import os
 
 import renpy
 
@@ -159,7 +160,25 @@ class Effect(renpy.display.displayable.Displayable):
         with renpy.loader.load(self.filename) as f:
             data = f.read()
 
-        self.effect = self.manager.load_effect(data, magnification=self.magnification)
+        # An .efkefc file does not embed its textures/models; Effekseer's
+        # default loaders read them from disk, relative to a material path. So
+        # resolve the effect to a real filesystem path and hand over its
+        # directory. transfn() raises for a file that exists only inside a .rpa
+        # archive -- such effects need the FileInterface bridge noted in
+        # src/effekseerio.cc, so report that clearly rather than failing later
+        # with missing textures.
+        root = None
+
+        try:
+            root = os.path.dirname(renpy.loader.transfn(self.filename))
+        except Exception:
+            if renpy.config.developer:
+                raise Exception(
+                    "The Effekseer effect {!r} is not an unpacked file. Effekseer resolves its "
+                    "textures on disk, so the effect and its resources must not be archived.".format(self.filename)
+                    )
+
+        self.effect = self.manager.load_effect(data, root=root, magnification=self.magnification)
         self.handle = self.manager.play(self.effect)
 
         width, height = self.size

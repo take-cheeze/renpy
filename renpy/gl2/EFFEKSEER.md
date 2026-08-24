@@ -58,6 +58,32 @@ label start:
     "..."
 ```
 
+## Effect files
+
+Effekseer has several file extensions, and only one of them is what this code
+loads:
+
+- **`.efkefc`** — the effect format game runtimes load. This is what
+  `Effekseer(...)` takes.
+- **`.efkpkg`** — a *package* (an archive of one or more `.efkefc` files plus
+  their resources). Convenient for distribution, but the shim does not unpack
+  it. Import it into the Effekseer editor and save/export an `.efkefc`.
+- `.efk` — the older pre-`.efkefc` binary format.
+
+Note that an **`.efkefc` does not embed its textures**. Effekseer's default
+loaders read them from disk relative to a *material path*, which
+`effekseer.py` derives from `renpy.loader.transfn()` — the effect and its
+resource folders must therefore be **unpacked files**, not inside a `.rpa`
+archive. Keep an effect next to its resource directories exactly as the editor
+laid them out.
+
+### Getting a test effect
+
+Effekseer's own download ships sample effects (e.g. under `Sample/00_Basic/`),
+and the project distributes user-contributed effects, almost all CC-0, from its
+sample-effects page. There is also an unofficial repository collecting the
+samples as `.efkpkg`, which need the editor round-trip described above.
+
 ## Known follow-ups (marked as TODO in the code)
 
 - **Premultiplied alpha.** Effekseer draws with straight alpha; Ren'Py
@@ -67,9 +93,9 @@ label start:
   camera matrices. They need to be matched to how effects were authored (and
   probably exposed as parameters), and the matrix row/column convention in
   `fill_matrix()` (`src/effekseerio.cc`) confirmed against the SDK in use.
-- **Dependency loading.** External textures/models/materials referenced by an
-  effect are not yet routed through Ren'Py's loader. Bridge an Effekseer
-  `FileInterface` onto `SDL_IOStream`, as `src/assimpio.cc` does for Assimp.
+- **Archived effects.** The material path requires unpacked files. To load an
+  effect from a `.rpa`, install a custom Effekseer `FileInterface` backed by
+  Ren'Py's loader, as `src/assimpio.cc` does for Assimp with `SDL_IOStream`.
 - **Resource cleanup.** The framebuffer is freed in `__dealloc__`; it should be
   deferred to `GL2Draw`'s per-frame free list so deletion always happens with
   the context current.

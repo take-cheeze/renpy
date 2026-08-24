@@ -9,10 +9,12 @@
 #    run.sh / setup.py). Without it, the test reports that the module is
 #    missing instead of failing with a traceback.
 #
-# 2. An effect file at testcases/game/effekseer/test.efkefc. The Effekseer
-#    editor ships sample effects in its Sample/ directory; export one with its
-#    resources embedded so it is self-contained (external resources are not
-#    routed through Ren'Py's loader yet).
+# 2. An effect file at testcases/game/effekseer/test.efkefc, unpacked together
+#    with whatever resource folders it references. An .efkefc does not embed
+#    its textures -- Effekseer reads them from disk next to the effect -- so
+#    copy the effect's whole directory, not just the one file. A .efkpkg must
+#    be imported into the Effekseer editor and saved as .efkefc first.
+#    See renpy/gl2/EFFEKSEER.md.
 #
 # The controls exist because the first run is expected to look wrong before it
 # looks right: the projection/camera defaults are placeholders, and the

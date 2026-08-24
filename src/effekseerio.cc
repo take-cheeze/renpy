@@ -66,6 +66,75 @@ static EffekseerRendererGL::OpenGLDeviceType device_type_of(int device_type) {
     }
 }
 
+/*
+ * Convert a UTF-8 string to UTF-16, which is what Effekseer's material path
+ * wants. Returns an empty vector for NULL/empty input.
+ *
+ * Effekseer's default texture/model/material loaders resolve an effect's
+ * external resources against this path with ordinary filesystem reads, so it
+ * must be a real directory on disk. That is why the Python side passes a path
+ * from renpy.loader.transfn() rather than a Ren'Py-relative name: a file that
+ * lives only inside a .rpa archive has no such path, and loading those needs a
+ * custom Effekseer::FileInterface (see effekseerio.h).
+ */
+static std::vector<char16_t> utf16_of(const char *utf8) {
+
+    std::vector<char16_t> rv;
+
+    if (utf8 == nullptr || *utf8 == '\0') {
+        return rv;
+    }
+
+    const unsigned char *p = (const unsigned char *) utf8;
+
+    while (*p) {
+        unsigned int cp;
+        int extra;
+
+        if (*p < 0x80) {
+            cp = *p;
+            extra = 0;
+        } else if ((*p & 0xE0) == 0xC0) {
+            cp = *p & 0x1F;
+            extra = 1;
+        } else if ((*p & 0xF0) == 0xE0) {
+            cp = *p & 0x0F;
+            extra = 2;
+        } else if ((*p & 0xF8) == 0xF0) {
+            cp = *p & 0x07;
+            extra = 3;
+        } else {
+            /* Invalid lead byte; skip it. */
+            p++;
+            continue;
+        }
+
+        p++;
+
+        for (int i = 0; i < extra; i++) {
+            if ((*p & 0xC0) != 0x80) {
+                /* Truncated sequence. */
+                cp = 0xFFFD;
+                break;
+            }
+            cp = (cp << 6) | (*p & 0x3F);
+            p++;
+        }
+
+        if (cp >= 0x10000) {
+            cp -= 0x10000;
+            rv.push_back((char16_t) (0xD800 + (cp >> 10)));
+            rv.push_back((char16_t) (0xDC00 + (cp & 0x3FF)));
+        } else {
+            rv.push_back((char16_t) cp);
+        }
+    }
+
+    rv.push_back(u'\0');
+
+    return rv;
+}
+
 /* Copy 16 column-major floats into an Effekseer::Matrix44.
  *
  * TODO: confirm the row/column convention against the Effekseer release in
@@ -133,15 +202,21 @@ extern "C" int renpy_effekseer_load_effect(renpy_effekseer_context *ctx, const v
         return -1;
     }
 
-    // Effekseer expects a UTF-16 material path. For a self-contained effect
-    // this can be null; resolving external dependencies through Ren'Py's
-    // loader is a follow-up (mirror src/assimpio.cc, which bridges a C++ IO
-    // interface onto SDL_IOStream).
-    // TODO: translate `root` (UTF-8) to char16_t and pass it, and/or install
-    // a custom Effekseer::FileInterface backed by Ren'Py's loader.
-    (void) root;
+    // `root` is the directory Effekseer's default loaders resolve the effect's
+    // external textures/models/materials against. It must be a real on-disk
+    // directory (see utf16_of above); NULL means the effect is self-contained.
+    //
+    // TODO: to support effects inside a .rpa archive, install a custom
+    // Effekseer::FileInterface backed by Ren'Py's loader, mirroring
+    // src/assimpio.cc which bridges a C++ IO interface onto SDL_IOStream.
+    std::vector<char16_t> material_path = utf16_of(root);
 
-    Effekseer::EffectRef effect = Effekseer::Effect::Create(ctx->manager, data, size, magnification);
+    Effekseer::EffectRef effect = Effekseer::Effect::Create(
+        ctx->manager,
+        data,
+        size,
+        magnification,
+        material_path.empty() ? nullptr : material_path.data());
     if (effect == nullptr) {
         return -1;
     }
