@@ -56,6 +56,19 @@ if [ -e "$ROOT/cubism" ]; then
     export LD_LIBRARY_PATH="$CUBISM/Core/dll/$CUBISM_PLATFORM:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 fi
 
+# Effekseer particle effects are optional; see renpy/gl2/EFFEKSEER.md. Put the
+# runtime (a directory containing include/ and lib/) in effekseer/, or set
+# EFFEKSEER yourself.
+if [ -z "$EFFEKSEER" ] && [ -e "$ROOT/effekseer" ]; then
+    export EFFEKSEER="$ROOT/effekseer"
+fi
+
+if [ -n "$EFFEKSEER" ]; then
+    # Unused when linking the static archives, needed if the Effekseer runtime
+    # was built as shared libraries.
+    export LD_LIBRARY_PATH="$EFFEKSEER/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+
 setup "$ROOT/"
 
 if  [ "$1" = "--build" ] ; then

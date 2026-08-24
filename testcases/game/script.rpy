@@ -58,6 +58,9 @@ label start:
         "Drag and Drop":
             call drag_and_drop
 
+        "Effekseer":
+            call effekseer
+
         "Done.":
             return
 

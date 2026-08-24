@@ -125,6 +125,10 @@ cubism
 CubismSdkForNative-*.zip
 CubismSdkForWeb-*.zip
 
+# Effekseer
+/effekseer
+/testcases/game/effekseer
+
 # Created files.
 /screenshot*
 .android.json
